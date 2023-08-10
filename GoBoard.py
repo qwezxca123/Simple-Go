@@ -183,49 +183,44 @@ class GoBoard:
 
     # 判斷勝負
     def determine_territory(self):
-        # 初始化領地盤為全0
         territory_board = np.zeros((self.size, self.size), dtype=int)
-        
-        # 輔助函數，檢查坐標是否在棋盤內
+
         def is_inside_board(x, y):
             return 0 <= x < self.size and 0 <= y < self.size
-        
-        # 深度優先搜索，找出連接的空區域
-        def dfs(x, y, visited):
-            if not is_inside_board(x, y) or (x, y) in visited or self.board[y, x] != 0:
+
+        def dfs(x, y, visited, value):
+            if not is_inside_board(x, y) or (x, y) in visited:
                 return set(), set()
-            
+
             visited.add((x, y))
             borders = set()
             neighbors = self.get_neighbors(x, y)
-            
+
             for nx, ny in neighbors:
-                if self.board[ny, nx] != 0:
-                    borders.add(self.board[ny, nx])
-                else:
-                    new_borders, new_visited = dfs(nx, ny, visited)
+                if self.board[ny, nx] == value:
+                    new_borders, new_visited = dfs(nx, ny, visited, value)
                     borders |= new_borders
                     visited |= new_visited
-            
+                else:
+                    borders.add(self.board[ny, nx])
+
             return borders, visited
-        
-        # 遍歷棋盤上的每一個位置
+
         visited_positions = set()
         for y in range(self.size):
             for x in range(self.size):
-                if self.board[y, x] == 0 and (x, y) not in visited_positions:
-                    borders, visited = dfs(x, y, set())
-                    
-                    # 根據邊界判定領地
+                if (x, y) not in visited_positions:
+                    borders, visited = dfs(x, y, set(), self.board[y, x])
+
                     if len(borders) == 1:
                         territory_value = list(borders)[0]
                         for vx, vy in visited:
                             territory_board[vy, vx] = territory_value
+
                     visited_positions |= visited
-        
+
         return territory_board
 
-    # 計算結果並展示
     def display_result(self):
         territory = self.determine_territory()
         black_score = np.sum(territory == 1)
@@ -268,7 +263,7 @@ class GoBoard:
         ax.axis('off')
 
         plt.show()
-
+        
     # 開始遊戲
     def start_game(self):
         consecutive_passes = 0  # 連續虛手的次數
